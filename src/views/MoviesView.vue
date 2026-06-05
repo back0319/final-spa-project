@@ -1,11 +1,12 @@
 <script setup>
-import { onMounted } from 'vue';
-import { useMovieStore } from '../stores/movieStore';
+import { onMounted } from "vue";
+import { useMovieStore } from "../stores/movieStore";
 
 const store = useMovieStore();
 
 onMounted(() => {
   store.fetchMovies();
+  document.title = "🍿 국내 극장 화제작 (인기순)";
 });
 </script>
 
@@ -36,13 +37,15 @@ onMounted(() => {
 
         <div class="card-content">
           <h3 class="title">{{ movie.title }}</h3>
-          <p v-if="movie.release_date" class="release-date">🗓️ 개봉일: {{ movie.release_date }}</p>
+          <p v-if="movie.release_date" class="release-date">
+            🗓️ 개봉일: {{ movie.release_date }}
+          </p>
           <p class="rating">⭐ {{ movie.vote_average.toFixed(1) }} / 10</p>
           <p class="overview">
             {{
               movie.overview
-                ? movie.overview.substring(0, 60) + '...'
-                : '국내에 등록된 줄거리 요약 정보가 없습니다.'
+                ? movie.overview.substring(0, 60) + "..."
+                : "국내에 등록된 줄거리 요약 정보가 없습니다."
             }}
           </p>
           <button
@@ -50,9 +53,14 @@ onMounted(() => {
             :class="{ active: movie.isFavorite }"
             class="fav-btn"
           >
-            {{ movie.isFavorite ? '❤️ 찜 해제' : '🤍 찜하기' }}
+            {{ movie.isFavorite ? "❤️ 찜 해제" : "🤍 찜하기" }}
           </button>
         </div>
+        <RouterLink
+          :to="`/movies/${movie.id}`"
+          class="stretched-link"
+          :aria-label="`${movie.title} 상세 정보 보기`"
+        ></RouterLink>
       </div>
     </div>
   </main>
@@ -95,6 +103,7 @@ onMounted(() => {
   gap: 30px;
 }
 .movie-card {
+  position: relative;
   border-radius: 12px;
   overflow: hidden;
   background: white;
@@ -157,6 +166,8 @@ onMounted(() => {
   flex-grow: 1;
 }
 .fav-btn {
+  position: relative;
+  z-index: 2;
   width: 100%;
   padding: 12px;
   cursor: pointer;
@@ -172,5 +183,13 @@ onMounted(() => {
 .fav-btn.active {
   background: #ff4757;
   color: white;
+}
+.stretched-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
 }
 </style>
