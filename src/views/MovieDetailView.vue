@@ -1,11 +1,14 @@
 <script setup>
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMovieStore } from "../stores/movieStore";
+import axios from "axios";
 
 const route = useRoute();
 const router = useRouter();
 const store = useMovieStore();
+const aiReview = ref("");
+const isAiLoading = ref(false);
 
 onMounted(() => {
   const movieId = route.params.id;
@@ -31,6 +34,7 @@ watch(
   (newMovie) => {
     if (newMovie && newMovie.title) {
       document.title = `${newMovie.title} | NETVUE 상세정보`;
+      aiReview.value = "";
     }
   },
   { immediate: true },
@@ -38,6 +42,44 @@ watch(
 
 const goBack = () => {
   router.back();
+};
+
+const generateAIReview = async () => {
+  if (!store.selectedMovie) return;
+
+  isAiLoading.value = true;
+  aiReview.value = "";
+
+  try {
+    const promptMessage = `
+너는 영화 평론 유튜버야. 아래 영화 데이터를 기반으로 블로그 글처럼
+2~3문단 분량의 상세하고 흡입력 있는 추천평을 작성해줘(이모지 필수).
+제목: "${store.selectedMovie.title}",
+장르: ${store.selectedMovie.genres.map((g) => g.name).join(", ")},
+평점: ${store.selectedMovie.vote_average.toFixed(1)}점
+`;
+
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: promptMessage }],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_AI_API_KEY}`,
+        },
+      },
+    );
+
+    aiReview.value = response.data.choices[0].message.content;
+  } catch (error) {
+    console.error("AI 호출 에러:", error);
+    aiReview.value = "서버가 혼잡합니다. 잠시 후 다시 시도해 주세요. 😢";
+  } finally {
+    isAiLoading.value = false;
+  }
 };
 </script>
 
@@ -115,6 +157,22 @@ const goBack = () => {
                 "정식 등록된 줄거리 정보가 존재하지 않습니다."
               }}
             </p>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="ai-section">
+            <button
+              @click="generateAIReview"
+              class="ai-btn"
+              :disabled="isAiLoading"
+            >
+              {{ isAiLoading ? "🤖 생성 중..." : "✨ AI 맞춤 추천사 듣기" }}
+            </button>
+
+            <div v-if="aiReview" class="ai-result-box">
+              <p>{{ aiReview }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -320,6 +378,52 @@ const goBack = () => {
   line-height: 1.9;
   color: #dcdde1;
   text-align: justify;
+  margin: 0;
+}
+.divider {
+  border: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 30px 0;
+}
+.ai-section {
+  margin: 30px 0;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.ai-btn {
+  width: 100%;
+  background: linear-gradient(45deg, #8a2be2, #4b0082);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.ai-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.ai-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.ai-result-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: #222;
+  border-left: 4px solid #8a2be2;
+  color: #fff;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.ai-result-box p {
   margin: 0;
 }
 .full-screen-loading-gate,
