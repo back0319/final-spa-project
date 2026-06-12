@@ -14,7 +14,7 @@ export const useMovieStore = defineStore("movie", () => {
     errorMessage.value = "";
 
     try {
-      const API_KEY = "3c7a5b95c038a00718d183ac0d2259df";
+      const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
       const movieParams = {
         api_key: API_KEY,
         language: "ko-KR",
@@ -74,7 +74,7 @@ export const useMovieStore = defineStore("movie", () => {
     selectedMovie.value = null;
 
     try {
-      const API_KEY = "3c7a5b95c038a00718d183ac0d2259df";
+      const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
       const url = `https://api.themoviedb.org/3/movie/${movieId}`;
 
       const response = await axios.get(url, {
