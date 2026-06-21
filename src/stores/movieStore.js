@@ -54,14 +54,20 @@ export const useMovieStore = defineStore("movie", () => {
 
   const toggleFavorite = (movieId) => {
     const movie = movies.value.find((m) => m.id === movieId);
+    const favoriteMovie = favorites.value.find((m) => m.id === movieId);
+    const targetMovie = movie || favoriteMovie;
 
-    if (movie) {
-      movie.isFavorite = !movie.isFavorite;
+    if (targetMovie) {
+      const isAlreadyFavorite = favorites.value.some((m) => m.id === movieId);
 
-      if (movie.isFavorite) {
-        favorites.value.push(movie);
-      } else {
+      if (isAlreadyFavorite) {
         favorites.value = favorites.value.filter((m) => m.id !== movieId);
+        if (movie) {
+          movie.isFavorite = false;
+        }
+      } else {
+        targetMovie.isFavorite = true;
+        favorites.value.push(targetMovie);
       }
 
       sessionStorage.setItem("favorites", JSON.stringify(favorites.value));
